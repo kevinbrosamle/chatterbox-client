@@ -4,9 +4,10 @@ var app = {
   server: 'https://api.parse.com/1/classes/messages',
   user: {
     name: window.location.href.split('=')[1],
-    friends: [],
-    roomName: 'room name'
+    friends: []
   }, 
+  roomNames: ['General'],
+  currentRoom: null,
   existingMessages: {}
 };
 
@@ -23,6 +24,11 @@ app._cleanInput = input => {
 
 app.init = function() {
   setInterval(this.fetch.bind(this), 1000);
+  setInterval(function() {
+    $('.timeFromNow').each(function() {
+      $(this).text(`${moment($(this).attr('data-created-at')).fromNow()}`);
+    });
+  }, 30000);
 };
 
 app.send = function(message) {
@@ -35,6 +41,7 @@ app.send = function(message) {
 
 app.fetch = function() {
   var displayMessage = messages => {
+    messages.results.reverse();
     _.each(messages.results, data => {
       if (!this.existingMessages[data.objectId]) {
         this.existingMessages[data.objectId] = true;
@@ -54,21 +61,39 @@ app.clearMessages = function() {
 };
 
 app.addMessage = function(message) {
+  let roomname = message.roomname ? this._cleanInput(message.roomname) : '';
   let username = message.username ? this._cleanInput(message.username) : '';
   let className = username.replace(' ', '-');
   let text = message.text ? this._cleanInput(message.text) : '';
-  username && $('#chats').prepend(`<div class="${className} chat"><span class="username">${username}</span>: ${text}</div>`);
-  this.user.friends.indexOf(className) !== -1 && $('#chats > div').last().addClass('friend');
-};//needs spans to keep track of chat and username and entire line for formatting
+  this.addRoom(roomname);
+  if (username) {
+    $('#chats').prepend(`<div class="${className} chat ${roomname}"><span class="username">[<span class="timeFromNow" data-created-at="${message.createdAt}">${moment(message.createdAt).fromNow()}</span>] ${username}</span>: ${text} [${moment(message.createdAt).format('M/D/YY h:mmA')}]</div>`);
+    if (this.user.friends.indexOf(className) !== -1) {
+      $('#chats > div').first().addClass('friend');
+    }
+    if (this.currentRoom !== null && this.roomname !== roomname) {
+      $('#chats > div').first().hide();
+    }
+  } 
+};
 
 app.addRoom = function(roomName) {
-  $('#roomSelect').append(`<span>${roomName}</span>`);
+  if (this.roomNames.indexOf(roomName) === -1) {
+    $('#roomSelect').append(`<option>${roomName}</option>`);
+    this.roomNames.push(roomName);
+  }  
 };
 
 app.addFriend = function(target) {
   target = target.replace(' ', '-');
-  this.user.friends.push(target);
-  $(`.${target}`).addClass('friend');
+  var index = this.user.friends.indexOf(target);
+  if (index === -1) {
+    this.user.friends.push(target);
+    $(`.${target}`).addClass('friend');
+  } else {
+    this.user.friends.splice(index, 1);
+    $(`.${target}`).removeClass('friend');
+  }
 };
 
 app.handleSubmit = function(text) {
@@ -77,6 +102,12 @@ app.handleSubmit = function(text) {
     text: text,
     roomname: app.user.roomName
   });
+};
+
+app.selectRoom = function() {
+  $('#chats > div').show();
+  app.currentRoom = document.getElementById('roomSelect').value;
+  $('#chats > div').not(`.${app.currentRoom}`).hide();
 };
 
 
@@ -89,5 +120,9 @@ $(document).ready(() => {
   $('body').on('click', '#send', function() {
     app.handleSubmit($('#message').val());
   });
+  $('body').on('click', '#roomSubmit', function() {
+    app.addRoom($('#roomInput').val());
+  });
+
 });
 
