@@ -6,8 +6,8 @@ var app = {
     name: window.location.href.split('=')[1],
     friends: []
   }, 
-  roomNames: ['General'],
-  currentRoom: null,
+  roomNames: ['General Chat'],
+  currentRoom: 'General Chat',
   existingMessages: {}
 };
 
@@ -57,21 +57,30 @@ app.fetch = function() {
 };
 
 app.clearMessages = function() {
+  this.existingMessages = {};
   $('#chats').empty();
 };
 
 app.addMessage = function(message) {
-  let roomname = message.roomname ? this._cleanInput(message.roomname) : '';
+  let roomname = message.roomname;
+  let roomClassName = '';
+  if (roomname === null || roomname === undefined || roomname.replace(' ', '') === '') {
+    roomname = 'General Chat';
+    roomClassName = 'General-Chat';
+  } else {
+    roomname = this._cleanInput(roomname);
+    roomClassName = roomname.replace(' ', '-');
+  } 
   let username = message.username ? this._cleanInput(message.username) : '';
   let className = username.replace(' ', '-');
   let text = message.text ? this._cleanInput(message.text) : '';
   this.addRoom(roomname);
   if (username) {
-    $('#chats').prepend(`<div class="${className} chat ${roomname}"><span class="username">[<span class="timeFromNow" data-created-at="${message.createdAt}">${moment(message.createdAt).fromNow()}</span>] ${username}</span>: ${text} [${moment(message.createdAt).format('M/D/YY h:mmA')}]</div>`);
+    $('#chats').prepend(`<div class="${className} chat ${roomClassName}"><span class="username">[<span class="timeFromNow" data-created-at="${message.createdAt}">${moment(message.createdAt).fromNow()}</span>] ${username}</span>: ${text} [${moment(message.createdAt).format('M/D/YY h:mmA')}]</div>`);
     if (this.user.friends.indexOf(className) !== -1) {
       $('#chats > div').first().addClass('friend');
     }
-    if (this.currentRoom !== null && this.roomname !== roomname) {
+    if (this.currentRoom !== roomname) {
       $('#chats > div').first().hide();
     }
   } 
@@ -100,14 +109,14 @@ app.handleSubmit = function(text) {
   app.send({
     username: app.user.name,
     text: text,
-    roomname: app.user.roomName
+    roomname: app.currentRoom
   });
 };
 
 app.selectRoom = function() {
   $('#chats > div').show();
   app.currentRoom = document.getElementById('roomSelect').value;
-  $('#chats > div').not(`.${app.currentRoom}`).hide();
+  $('#chats > div').not(`.${app.currentRoom.replace(' ', '-')}`).hide();
 };
 
 
