@@ -4,8 +4,10 @@ var app = {
   server: 'https://api.parse.com/1/classes/messages',
   user: {
     name: window.location.href.split('=')[1],
-    friends: []
-  } 
+    friends: [],
+    roomName: 'room name'
+  }, 
+  existingMessages: {}
 };
 
 app._cleanInput = input => {
@@ -34,7 +36,10 @@ app.send = function(message) {
 app.fetch = function() {
   var displayMessage = messages => {
     _.each(messages.results, data => {
-      this.addMessage(data);
+      if (!this.existingMessages[data.objectId]) {
+        this.existingMessages[data.objectId] = true;
+        this.addMessage(data);
+      }
     });
   };
   $.ajax({
@@ -52,7 +57,7 @@ app.addMessage = function(message) {
   let username = message.username ? this._cleanInput(message.username) : '';
   let className = username.replace(' ', '-');
   let text = message.text ? this._cleanInput(message.text) : '';
-  username && $('#chats').append(`<div class="${className} chat"><span class="username">${username}</span>: ${text}</div>`);
+  username && $('#chats').prepend(`<div class="${className} chat"><span class="username">${username}</span>: ${text}</div>`);
   this.user.friends.indexOf(className) !== -1 && $('#chats > div').last().addClass('friend');
 };//needs spans to keep track of chat and username and entire line for formatting
 
@@ -66,8 +71,12 @@ app.addFriend = function(target) {
   $(`.${target}`).addClass('friend');
 };
 
-app.handleSubmit = function() {
-
+app.handleSubmit = function(text) {
+  app.send({
+    username: app.user.name,
+    text: text,
+    roomname: app.user.roomName
+  });
 };
 
 
@@ -76,6 +85,9 @@ $(document).ready(() => {
   app.init();
   $('body').on('click', '.username', function() {
     app.addFriend($(this).text());  
+  });
+  $('body').on('click', '#send', function() {
+    app.handleSubmit($('#message').val());
   });
 });
 
