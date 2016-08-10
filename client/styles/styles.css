@@ -46,6 +46,25 @@ body {
     line-height: 13px;
 }
 
+#roomInput, #message {
+    width: 50%;
+
+}
+
+#message{
+    height: 50px;
+    font-size: 18px;
+}
+
+#roomSubmit, #send {
+    width: 10%;
+}
+
+blockquote {
+    overflow: auto;
+    word-wrap: break-word;
+}
+
 form {
     padding: 20px;
     padding-left: 0;
@@ -66,6 +85,7 @@ form input[type=text] {
 }
 
 .chat .username {
+    color: navy;
     font-weight: 800;
     cursor: pointer;
 }
@@ -88,4 +108,8 @@ form input[type=text] {
     color: #fff;
     background-color: #0090da;
     font-weight: bold;
+}
+
+.timeFromNow {
+    color: grey;
 }

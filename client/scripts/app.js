@@ -26,7 +26,7 @@ app.init = function() {
   setInterval(this.fetch.bind(this), 1000);
   setInterval(function() {
     $('.timeFromNow').each(function() {
-      $(this).text(`${moment($(this).attr('data-created-at')).fromNow()}`);
+      $(this).text(`[${moment($(this).attr('data-created-at')).fromNow()}]`);
     });
   }, 30000);
 };
@@ -76,7 +76,21 @@ app.addMessage = function(message) {
   let text = message.text ? this._cleanInput(message.text) : '';
   this.addRoom(roomname);
   if (username) {
-    $('#chats').prepend(`<div class="${className} chat ${roomClassName}"><span class="username">[<span class="timeFromNow" data-created-at="${message.createdAt}">${moment(message.createdAt).fromNow()}</span>] ${username}</span>: ${text} [${moment(message.createdAt).format('M/D/YY h:mmA')}]</div>`);
+    $('#chats').prepend(`
+      <div class="${className} chat ${roomClassName}">
+        <blockquote>
+          <span class="username">
+            <span class="timeFromNow" data-created-at="${message.createdAt}">
+              [${moment(message.createdAt).fromNow()}]
+            </span>
+            ${username}
+          </span>:<p>
+          ${text}
+          </p>
+          [${moment(message.createdAt).format('M/D/YY h:mmA')}]
+        </blockquote>
+      </div>
+    `);
     if (this.user.friends.indexOf(className) !== -1) {
       $('#chats > div').first().addClass('friend');
     }
@@ -84,13 +98,6 @@ app.addMessage = function(message) {
       $('#chats > div').first().hide();
     }
   } 
-};
-
-app.addRoom = function(roomName) {
-  if (this.roomNames.indexOf(roomName) === -1) {
-    $('#roomSelect').append(`<option>${roomName}</option>`);
-    this.roomNames.push(roomName);
-  }  
 };
 
 app.addFriend = function(target) {
@@ -111,6 +118,14 @@ app.handleSubmit = function(text) {
     text: text,
     roomname: app.currentRoom
   });
+  $('#message').val('');
+};
+
+app.addRoom = function(roomName) {
+  if (this.roomNames.indexOf(roomName) === -1) {
+    $('#roomSelect').append(`<option>${roomName}</option>`);
+    this.roomNames.push(roomName);
+  } 
 };
 
 app.selectRoom = function() {
@@ -119,6 +134,13 @@ app.selectRoom = function() {
   $('#chats > div').not(`.${app.currentRoom.replace(' ', '-')}`).hide();
 };
 
+app.handleRoomSubmit = function(roomName) {
+  this.currentRoom = roomName;
+  this.addRoom(roomName);
+  $('#roomSelect').val(roomName);
+  $('#roomInput').val('');  
+  this.selectRoom();
+};
 
 //initilization
 $(document).ready(() => {
@@ -126,12 +148,20 @@ $(document).ready(() => {
   $('body').on('click', '.username', function() {
     app.addFriend($(this).text());  
   });
+  //message senders
   $('body').on('click', '#send', function() {
     app.handleSubmit($('#message').val());
   });
+  $('body').on('keyup', '#message', function(e) {
+    e.which === 13 && app.handleSubmit($('#message').val());
+  });
+  //new room senders
   $('body').on('click', '#roomSubmit', function() {
-    app.addRoom($('#roomInput').val());
+    console.log($('#roomSelect').val())
+    app.handleRoomSubmit($('#roomInput').val());
+  });
+  $('body').on('keyup', '#roomInput', function(e) {
+    e.which === 13 && app.handleRoomSubmit($('#roomInput').val());
   });
 
 });
-
